@@ -1,0 +1,803 @@
+\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[12,]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provides euro and other symbols
+\else % if luatex or xelatex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage[]{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\usepackage{hyperref}
+\hypersetup{
+            pdftitle={Population-weighted exposure to air pollution and COVID-19 infection in Germany},
+            pdfauthor={Guowen Huang\^{}\{1,2,*\}, Patrick E Brown\^{}\{1,2\}},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{5}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+% set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+\usepackage{subcaption}
+\newcommand{\subfloat}[2][need a sub-caption]{ \subcaptionbox{#1}{#2} }
+\usepackage{xcolor}
+\usepackage{setspace}\doublespacing
+\usepackage{pdflscape}
+\usepackage{float}
+\usepackage{booktabs}
+\newcommand{\tp}{^\text{T}}
+\newcommand{\dens}{\boldsymbol{\pi}}
+\usepackage[a4paper,width=15cm, lines=26, left=3cm ]{geometry}
+
+\usepackage[style=authoryear,backend=biber,maxbibnames = 20,maxcitenames = 2,doi = false,isbn = false,giveninits = true,uniquelist = false]{biblatex}
+\addbibresource{thebib.bib}
+
+\title{Population-weighted exposure to air pollution and COVID-19 infection in
+Germany}
+\author{Guowen Huang\(^{1,2,*}\), Patrick E Brown\(^{1,2}\)}
+\date{}
+
+\begin{document}
+\maketitle
+
+\hypertarget{abstract}{%
+\subsection*{Abstract}\label{abstract}}
+\addcontentsline{toc}{subsection}{Abstract}
+
+It is well known that COVID-19, caused by the severe acute respiratory
+syndrome coronavirus 2 (SARS-CoV-2), is to spread mainly from person to
+person, mainly through respiratory droplets produced when an infected
+person coughs or sneezes. Therefore, many countries have enforced social
+distancing to stop the spread of COVID-19. Within countries, although
+the measures taken by governments are similar, the incidence rate varies
+among areas (e.g., counties, cities). One potential explanation is that
+people in some areas are more vulnerable to the coronavirus disease
+because of their worsened health conditions caused by long-term exposure
+to poor air quality. In this study, we investigate whether long-term
+exposure to air pollution increases the risk of COVID-19 infection in
+Germany. The results show that nitrogen dioxide (NO\(_2\)) is
+significantly associated with COVID-19 incidence rate, with 1
+\(\mu gm^{-3}\) increase of long-term exposure to NO\(_2\), the COVID-19
+incidence rate is likely to increase 5.58\% (95\% credible interval
+{[}CI{]}: 3.35\%, 7.86\%). This result is consistent across various
+health models. The analyses can be reproduced and updated routinely
+using public data sources and shared R code.
+
+\hypertarget{keywords}{%
+\subsection*{Keywords}\label{keywords}}
+\addcontentsline{toc}{subsection}{Keywords}
+
+COVID-19, air pollution, health impacts, Kriging, INLA
+
+\hypertarget{author-information}{%
+\subsection*{Author information}\label{author-information}}
+\addcontentsline{toc}{subsection}{Author information}
+
+\(^1\) Dept. of Statistical Sciences, University of Toronto, Toronto,
+ON, Canada\\
+\(^2\) Centre for Global Health Research, St Michael's Hospital,
+Toronto, ON, Canada\\
+\(^*\) Corresponding author: E-mail: hgw0610209@gmail.com
+
+\hypertarget{introduction}{%
+\section{Introduction}\label{introduction}}
+
+COVID-19, caused by the severe acute respiratory syndrome coronavirus 2
+(SARS-CoV-2), is currently widespread and much more dangerous than
+seasonal flu. It is more infectious than seasonal flu and has a higher
+death rate. Up to 17th September, 2020, it has led to worldwide over
+30.3 million cases and 950 thousand deaths. In Germany, the total
+confirmed cases up to 17th September, 2020 have risen to 269 thousand,
+with deaths being more than 9.4 thousand. A recent study by
+\textcite{Wu2020} investigated the impact of long-term average exposure
+to fine particulate matter (PM\(_{2.5}\)) on the risk of COVID-19 deaths
+in the United States and found that an increase of only 1
+\(\mu g/m^{-3}\) in PM\(_{2.5}\) was associated with a 8\% (95\%
+confidence interval, 2\%, 15\%) increase in the COVID-19 death rate.
+\textcite{Ogen2020} reported that most of COVID-19 fatality cases
+occurred in those regions with the highest NO\(_2\) concentrations while
+studying 66 administrative regions in Italy, Spain, France and Germany.
+These results suggest that high levels of air pollution may be an
+important contributor to COVID-19 infections or deaths.
+
+\hypertarget{literature-review-on-epidemiology}{%
+\subsection{Literature review on
+epidemiology}\label{literature-review-on-epidemiology}}
+
+The existing body of research on the impacts of air pollution on human
+health, has linked PM\(_{2.5}\) and NO\(_2\) exposure to health damage,
+particularly respiratory and lung diseases, which could make people more
+vulnerable to contracting COVID-19. The main source of NO\(_2\)
+resulting from human activities is the combustion of fossil fuels (coal,
+gas and oil), especially fuel used in cars. Exposure to high levels of
+NO\(_2\) can cause inflammation of the airways. Long-term exposure may
+affect lung function and respiratory symptoms. For example, the research
+results from \textcite{Bowatte2017} indicate that long-term exposure to
+NO\(_2\) was associated with increased risk of respiratory diseases,
+while \textcite{Lee2009} show that long-term exposure to NO\(_{2}\) was
+significantly associated with respiratory hospital admissions in
+Edinburgh and Glasgow, UK. Similarly, \textcite{Schikowski2005} suggests
+that long-term exposure to air pollution from NO\(_2\) and living near a
+major road might increase the risk of developing chronic obstructive
+pulmonary disease (COPD) and can have a detrimental effect on lung
+function.
+
+On the other hand, particulate matter (both PM\(_{10}\) and
+PM\(_{2.5}\)) is made up of a wide range of materials and arises from
+both human-made (such as stationary fuel combustion and transport) and
+natural sources (such as sea spray and Saharan sand dust).
+Concentrations of particulate matter comprises primary particles emitted
+directly into the atmosphere from combustion sources and secondary
+particles formed by chemical reactions in the air. Exposure to
+particulate matter is associated with respiratory and cardiovascular
+illness and mortality as well as other adverse health effects. Since the
+particulate matter can be inhaled into the thoracic region of the
+respiratory tract, there is a plausible reason the relationship could be
+causal. Examples include \textcite{Lee2009} and \textcite{Lee2012b},
+where the authors found that long-term exposure to PM\(_{10}\) was
+significantly associated with respiratory hospital admissions. Recent
+reviews by \textcite{COMEAP2010} have suggested exposure to PM\(_{2.5}\)
+had a stronger association with the observed adverse health effects
+because they can travel deeper into lungs.
+
+\hypertarget{literature-review-on-statistical-models}{%
+\subsection{Literature review on statistical
+models}\label{literature-review-on-statistical-models}}
+
+A spatial ecological design can be used to estimate the impacts of air
+pollution on health by comparing geographical contrasts in air pollution
+and infection risk across \(K\) contiguous small areas
+\autocites{Huang2018}{Napier2018}{Rushworth2014}. In such studies, the
+disease data are counts of disease cases occurring in each areal unit
+while the spatially representative pollution concentrations in each
+areal unit are typically estimated by applying Kriging, a spatial model
+\autocite{Diggle2007}, to data from a sparse monitoring network, or by
+computing averages over modelled concentrations (grid level) from an
+atmospheric dispersion model
+\autocites{Wu2020}{Maheswaran2006}{Lee2009}{Warren2012a}, or by
+combining both to obtain a better prediction
+\autocites{Huang2018}{VinikoorImler2014}{Sacks2014}. The downside of
+these studies is that the inference is a population level association
+rather than an individual-level causal relationship, and wrongly
+assuming the two are the same is known as ecological bias
+\autocites{Arbia1988}{Wakefield2001}. Such bias is due in part to
+within-population variation in pollution exposures and disease
+incidence, because one does not know whether, within a population, it is
+the same individuals that exhibit disease and have the highest air
+pollution exposures \autocite{Lee2020}. The simulation study from
+\textcite{Lee2020} also suggests that the estimates of the aggregated
+model from individual levels almost always exhibit less variation than
+those from the ecological model.
+
+Another challenge in air pollution health effect studies is how to allow
+for the uncertainty in the estimated pollution concentrations when
+estimating their health effects \autocites{Huang2018}{Blair2007}.
+Specifically, the areal level pollution predictions produced from the
+pollution data are uncertain as they are only estimates of the true
+spatially-varying concentrations. The disadvantage of using a point
+estimate is that one may overstate the certainty about the connection
+between the outcome and the covariate. A number of approaches have been
+proposed to incorporate pollution uncertainties and measurement errors
+into the health model
+\autocites[e.g.,][]{Huang2018}{Lee2017}{Blangiardo2016}{Gryparis2009}.
+
+In this study, we investigate whether long-term average exposure to air
+pollution increases the risk of COVID-19 infection in Germany using a
+spatial ecological design. Specifically, in order to reduce the
+potential ecological bias, we better estimate the true areal pollution
+concentrations by first using Kriging to pollution monitoring data to
+obtain predictions on fine grids where population density data are
+available, then estimate the areal pollution concentrations by taking
+spatially population-weighted average of the gridded predictions lying
+within a specific county. This will likely enhance the estimation of
+people's real exposure for those counties where they generally live at
+rural areas while their urban pollution are much worse compared to the
+rural areas. Given that the study from \textcite{Lee2017} showed that
+treating the posterior predictive pollution distribution as a prior in
+the disease model has produced similar results to ignoring the
+uncertainty except for PM\(_{10}\), and \textcite{Blangiardo2016} also
+found that incorporating uncertainty in pollution by making multiple
+sets of estimated exposure and then fitting the disease model separately
+for each set before combining the estimated health effects, did not
+change the substantive conclusions, we do not address exposure
+uncertainty in this study. Instead, we incorporate the reliability of
+gridded pollution predictions while aggregating them spatially, with
+details can be found in Section \ref{sec:weightedexposure}.
+
+The remainder of this paper is organized as follows. The data and its
+exploratory analysis are presented in Section \ref{sec:studyRegion},
+while the statistical methodology is outlined in Section
+\ref{sec:method}. The results of the study are reported in Section
+\ref{sec:results}, and the key conclusions are presented in Section
+\ref{sec:conclusion}.
+
+\hypertarget{sec:studyRegion}{%
+\section{Study region}\label{sec:studyRegion}}
+
+The study region is Germany which has a population of around 83 million
+people and \(K=401\) counties (administrative districts), among which
+294 are rural and 107 are urban. A map of these counties is shown in
+Figure \ref{fig:maps}, showing boundaries obtained from Germany's
+Federal Agency for Cartography and Geodesy \autocite{BKG2020}.
+
+\hypertarget{data-description}{%
+\subsection{Data description}\label{data-description}}
+
+The data set used in this study include COVID-19 cases, pollution
+concentrations, temperature and population data. The accumulated
+COVID-19 cases used in this study are collected up to 2020-09-13 at the
+county-level. Both pollution and temperature data are the most recent
+available few years (2016-2018) average concentrations (representing
+long-term exposure) from monitoring sites, which are converted to
+county-level by applying the spatial modelling and prediction method
+described in Section \ref{sec:method} to obtain the spatially
+population-weighted representative concentrations for each county. The
+pollutants considered in this study include common pollutants:
+PM\(_{2.5}\) and PM\(_{10}\), NO\(_{2}\), SO\(_2\); and also four
+poisonous pollutants: benzene, arsenic in PM\(_{10}\), cadmium in
+PM\(_{10}\) and nickel in PM\(_{10}\). These pollutants could have
+potential harmful health effects, such as damage to the lungs and nasal
+cavity, reducing lung function, causing chronic bronchitis and cancers
+of the bladder and lungs
+\autocites{Yu2002}{Smith2010}{Jarup1998}{Das2008}.
+
+The population data contain fine gridded population density data, the
+population by sex and age on the federal state level and also the county
+level population data. The fine gridded population density data are used
+for calculating population-weighted county level exposure (see Section
+\ref{sec:method} for details), while the latter two are used to
+calculate the expected number of cases in each county. Specifically, we
+denote Y\(_k\) as the reported numbers of COVID-19 cases for county
+\(k\), and calculate the expected number of cases in each county by
+\(E_k=\frac{P_k}{P_{s(k)}} \sum_j r_j P_{s(k),j}\), where \(P_k\) is the
+population in county \(k\), \(r_j\) is the national incidence rate in
+sex-age group \(j\), and \(P_{s(k)}= \sum_jP_{s(k),j}\) denotes the
+population of the state which contains county \(k\). The latter part in
+the equation \(\sum_j r_j P_{s(k),j}\) is the expected number of cases
+in state \(s(k)\). Then we use standardized incidence ratio (SIR) given
+by SIR\(_{k}=Y_{k}/E_{k}\), to measure the risk of disease, and an SIR
+of 1.1 indicates a 10\(\%\) increased risk of disease compared to that
+expected. A spatial map of the natural logarithm of SIR for COVID-19
+(the scale will be modelled on) as of 2020-09-13 can be seen in Figure
+\ref{fig:maps3}, showing a wide variation in SIRs across the counties in
+Germany and the majority of the high‐risk counties are at the east and
+south part of Germany.
+
+\hypertarget{data-sources}{%
+\subsection{Data sources}\label{data-sources}}
+
+The COVID-19 cases by county, and the population by sex and age on the
+federal state level in Germany are publicly available on Kaggle
+\autocite{HeadsorTails2020}, where the COVID-19 cases and deaths will be
+updated daily, with the earliest recorded cases are from 2020-01-24.
+More details on the original sources of COVID-19 and state level
+population data can be found in \textcite{HeadsorTails2020}. The county
+level population data are freely obtained from the City Population
+\autocite{Citypopulation2019}. Both population data sets reflect the
+(most recent available) estimates on 2018-12-31. The fine gridded
+population density data are freely available on DIVA-GIS
+\autocite{DIVAGIS2020}, which is shown in Figure \ref{fig:maps2}.
+
+Pollution data are available from the Air Quality e-Reporting provided
+by European Environment Agency \autocite{EEA2020}, where the monitoring
+stations are shown in Figure \ref{fig:maps1} which tend to be dense
+where the population density is high (see Figure \ref{fig:maps2}). The
+monitoring temperature data can be freely downloaded from European
+Climate Assessment \& Dataset \autocite{ECAD2020}.
+
+\begin{figure}[H]
+\subfloat[Pollution stations\label{fig:maps1}]{\includegraphics[width=0.5\textwidth]{figure/maps-1} }\subfloat[Population density\label{fig:maps2}]{\includegraphics[width=0.5\textwidth]{figure/maps-2} }\subfloat[log(SIR) in counties\label{fig:maps3}]{\includegraphics[width=0.5\textwidth]{figure/maps-3} }\subfloat[NO$_2$ in counties\label{fig:maps4}]{\includegraphics[width=0.5\textwidth]{figure/maps-4} }\caption[Pollution stations, population density, log COVID-19 SIR and population-weighted NO$_2$ ($\mu g m^{-3}$) in Germany]{Pollution stations, population density, log COVID-19 SIR and population-weighted NO$_2$ ($\mu g m^{-3}$) in Germany.}\label{fig:maps}
+\end{figure}
+
+\hypertarget{sec:method}{%
+\section{Method}\label{sec:method}}
+
+Based on the observed and expected counts of disease cases occurring in
+each areal unit, we calculate SIR\(_{k}=Y_{k}/E_{k}\), to measure the
+risk of disease. SIR\(_{k}>1\) represents areas with elevated levels of
+disease risk, while SIR\(_{k}<1\) corresponds to comparatively healthy
+areas. The elevated risks are likely to happen by chance if \(E_{k}\) is
+small, which can occur if the disease in question is rare and/or the
+population at risk is small \autocite{Lee2011}. To overcome this
+problem, the Poisson log-linear spatial models are typically used for
+the analysis \autocites{Elliott2000}{Banerjee2004}{Lawson2008}, where
+the linear predictor includes pollutant concentrations and potential
+confounders. These known covariates are augmented by a set of random
+effects to capture the residual spatial autocorrelation after the
+covariate effects have been accounted for. The random effects borrow
+strength from values in neighbouring areas, which reduces the likelihood
+of excesses in risk occurring by chance.
+
+These random effects are commonly modelled by the class of conditional
+autoregressive (CAR) prior distributions, which are a type of Markov
+random field model \autocite{Rue2005}. The spatial correlation between
+the random effects is determined by a binary \(K × K\) neighbourhood
+matrix \textbf{W}. Based on this neighbourhood matrix, the most common
+models for the random effects include intrinsic autoregressive
+\autocite{Besag1991}, convolution model \autocite{Besag1991}, as well as
+those proposed by \textcite{Cressie1993} and \textcite{Leroux1999}.
+These CAR models differ by holding different assumptions about how the
+random effects depend on each other across space.
+
+\hypertarget{pollution-model}{%
+\subsection{Pollution model}\label{pollution-model}}
+
+For simplicity, in this study we use a univariate model for each
+pollutant, since the number of monitoring stations is 709 which is a
+large sample size and produces predictions with modest standard errors.
+We treat the underlying pollution levels in Germany as a spatial
+Gaussian process \(\{S(\symbf{s}):\symbf{s}\in \mathbb{R}^{2}\}\) with
+mean \(\mu\), variance \(\sigma^2=\mbox{Var}\{S(\symbf{s})\}\) and
+correlation function
+\(\rho(u)= \mbox{Corr}\{S(\symbf{s}), S(\symbf{s}\prime)\}= \mbox{exp}(-u/\eta)\),
+where \(u=\lVert \symbf{s}-\symbf{s}\prime\rVert\) denotes the Euclidean
+distance between \(\symbf{s}\) and \(\symbf{s}\prime\). Denote the
+observed pollution data as
+\(\symbf{Z}=\{Z(\symbf{s}); \symbf{s}= \symbf{s}_1,\dots,\symbf{s}_n\}\),
+and write
+\(\symbf{S}=\{S(\symbf{s}); \symbf{s}= \symbf{s}_1,\dots,\symbf{s}_n\}\)
+for the unobserved values of the signal at the sampling locations
+\(\symbf{s}_1,\dots,\symbf{s}_n\), the pollution model is assumed as
+\begin{equation}
+\symbf{Z} = \symbf{S} + \symbf{\epsilon},
+\label{eq:model}
+\end{equation} where
+\(\symbf{\epsilon} (\symbf{s}) \sim \mbox{N} (\symbf{0}, \tau^2\symbf{I})\)
+is uncorrelated with \(\symbf{S}\), and \(\symbf{I}\) is the identity
+matrix of order \(n\). \(\symbf{S}\) is multivariate Gaussian with mean
+vector \(\mu \symbf{1}\), where \(\symbf{1}\) denotes a vector each of
+whose elements is 1, and variance matrix \(\tau^2 R\), where \(R\) is
+the \(n\) by \(n\) matrix with elements
+\(r_{ij}=\rho(\lVert \symbf{s}_i-\symbf{s}_j\prime\rVert)\). Similarly,
+\(Z\) is multivariate Gaussian \begin{eqnarray}
+\symbf{Z} &\sim& \mbox{N} (\mu\symbf{1}, \sigma^2 V)\\\nonumber
+V &=&  R+\nu^2\symbf{I},
+\label{eq:var}
+\end{eqnarray} where \(\nu^2=\tau^2/\sigma^2\) is the noise-to-signal
+variance ratio.
+
+The log-likelihood function of (\ref{eq:model}) is \begin{eqnarray}
+L(\mu, \tau^2,\sigma^2,\eta) = -0.5\{n\log(2\pi)+\log\{\mid \sigma^2 R(\eta)+\tau^2\symbf{I} \mid\}+(\symbf{Z}- \mu\symbf{1})\prime ( \sigma^2 R(\eta)+\tau^2\symbf{I})^{-1} (\symbf{Z} - \mu\symbf{1})\}
+\label{eq:likelihood}
+\end{eqnarray}
+
+Given \(V\), the maximum likelihood estimate (mle) of \(\mu\) and
+\(\sigma^2\) is given by, \begin{eqnarray}
+\hat{\mu} (V) &=& (\symbf{1}\prime V^{-1}\symbf{1})^{-1}\symbf{1}\prime V^{-1}\symbf{Z}\\\nonumber
+\hat{\sigma}^2(V) &=& n^{-1}(\symbf{Z}- \hat{\mu}\symbf{1})\prime V^{-1} (\symbf{Z} - \hat{\mu}\symbf{1}).
+\label{eq:gle}
+\end{eqnarray}
+
+By substituting \(\hat{\mu} (V)\), and \(\hat{\sigma}^2 (V)\) into the
+log-likelihood function, we have, \begin{eqnarray}
+L_0(\nu^2,\eta) = -0.5\{n\log(2\pi)+n\log \hat{\sigma}^2(V) + \log{\mid V\mid}+n\},
+\label{eq:likelihood0}
+\end{eqnarray} which can be optimized numerically with respect to
+\(\eta\) and \(\nu\), followed by back substitution to obtain
+\(\hat{\sigma}^2\) and \(\hat{\mu}\). This is achieved by function
+\textbf{likfit()} in \textbf{geoR} package by providing initial values
+for the covariance parameters \autocite{Diggle2007}.
+
+\hypertarget{sec:weightedexposure}{%
+\subsection{Population-weighted exposure}\label{sec:weightedexposure}}
+
+The areal pollution exposure is estimated by aggregating the gridded
+predictions weighted by population density and also the precision of
+prediction. For a new location \(\symbf{s}_0\), the Kriging formula of
+\(S(\symbf{s}_0)\) \autocite{Diggle2007} is used to obtain its
+prediction by plugging-in the resulting estimates
+\(\hat{\mu}, \sigma^2, \hat{\tau}^2, \hat{\eta}\), which is
+\begin{equation}
+\hat{S}(\symbf{s}_0) = \hat{\mu}+ \symbf{C}\prime_{\symbf{s}_0} (\hat{\sigma}^2 \hat{V})^{-1}(\symbf{Z}-\hat{\mu}\symbf{1}),
+\label{eq:prediction}
+\end{equation} where
+\(\symbf{C}_{\symbf{s}_0}=\hat{\sigma}^2(\exp(-\|\symbf{s}_1-\symbf{s}_0\|/\hat{\eta}),\dots,\exp(-\|\symbf{s}_n-\symbf{s}_0\|/\hat{\eta}))\prime\).
+The corresponding prediction variance is
+\(\mbox{Var}(\hat{S}(\symbf{s}_0)-S(\symbf{s}_0))=\hat{\sigma}^2-\symbf{C}\prime_{\symbf{s}_0} (\hat{\sigma}^2 \hat{V})^{-1}\symbf{C}_{\symbf{s}_0}\),
+based on which we have the inverse variance for the prediction,
+\(\zeta(\symbf{s}_0)=\frac{1}{\mbox{Var}(\hat{S}(\symbf{s}_0)-S(\symbf{s}_0))}\).
+The higher \(\zeta(\symbf{s}_0)\) is, the better quality the prediction
+has, and we give more weight to the most reliable pollution values while
+aggregating them \autocites{SanchezMeca1998}{LeeC2016}.
+
+After obtaining pollution predictions at the center of all grids where
+the population density data are available (see Figure \ref{fig:maps2})
+using (\ref{eq:prediction}), and denoting the population density at
+location \(\symbf{s}_i\) as \(G(\symbf{s}_i)\), for a specific county
+\(k\), the spatially representative pollution concentration is estimated
+by \begin{equation}
+z_k = \sum_{\symbf{s}_i \in A_k}\frac{\hat{S}(\symbf{s}_i)G(\symbf{s}_i)\zeta(\symbf{s}_i)}{\sum_{\symbf{s}_j \in A_k} G(\symbf{s}_j)\zeta(\symbf{s}_i)},
+\label{eq:arealEstimate}
+\end{equation} where \(A_k\) represents county \(k\). Therefore, \(z_k\)
+is a spatial metric of pollution concentrations weighted by population
+density and also the inverse of their Kriged variances.
+
+\hypertarget{sec:healthModel}{%
+\subsection{Health model}\label{sec:healthModel}}
+
+Recall that the disease data are counts of the numbers of cases
+occurring in each county in Germany, and that the observed and expected
+number of COVID-19 cases for county \(k\) are denoted as \(Y_{k}\) and
+\(E_{k}\), respectively. The health model is a Poisson log-linear model
+\autocite[see][]{Shaddick2015}, given by
+
+\begin{eqnarray}\label{eq:healthmodel}
+Y_{k}  &\sim & \mbox{Poisson}(E_{k}\lambda_{k}),~~k=1,\ldots,K,\\\nonumber
+\log(\lambda_{k}) &=& \symbf{X}_{k}^{\top}\symbf{\beta}+\phi_{k}
+\end{eqnarray} where the relative risk of disease in country \(k\) is
+denoted by \(\lambda_{k}\), and is modelled on the log scale by
+covariates \(\symbf{X}_{k}\), containing an intercept column and
+covariates (pollutants, temperature and areal population density
+{[}population divided by area{]} referred to as popDensity), and a
+spatial random effect \(\phi_{k}\). The regression parameters
+\(\symbf{\beta}\) are assigned weakly informative zero-mean Gaussian
+priors with diagonal variance matrix
+\(\symbf{\beta}\sim \mbox{N}\left(\symbf{0},10^2\symbf{I} \right)\).
+
+The spatial random effect, \(\phi_{k}\), is included to allow for any
+residual spatial autocorrelation remaining in the disease counts after
+the covariate effects have been accounted for, and is modelled by,
+\begin{eqnarray}\label{eq:model2}
+\symbf{\phi} \sim \mbox{N}\left(\symbf{0},\kappa^2 \symbf{Q}(\xi,\symbf{W})^{-1}\right),
+\end{eqnarray} where \(\symbf{\phi}=\{\phi_k, k=1,\dots, K\}\). Spatial
+autocorrelation is induced into the random effects by the precision
+matrix
+\(\symbf{Q}(\xi,\symbf{W})=\xi(\mbox{diag}(\symbf{W}\symbf{1})-\symbf{W})+(1-\xi)\symbf{I}\),
+which corresponds to the CAR model proposed by \textcite{Leroux1999}.
+The spatial dependence in the data is captured by an \(K \times K\)
+neighbourhood matrix \(\symbf{W}\), whose \(ij\)th element equals 1 if
+areas \((i,j )\) share a common border and is zero otherwise. The level
+of spatial autocorrelation in the random effects is controlled by
+\(\xi\). Finally, weakly informative hyperpriors are specified for the
+parameters \((\kappa^2,\xi)\) by \begin{eqnarray}\label{eq:model3}
+\kappa &\sim &  \mbox{Exp}[\log(2)],\\\nonumber
+\log\left(\frac{\xi}{1-\xi}\right) &\sim & \mbox{N}(0,1.8).
+\end{eqnarray} The prior distribution of \(\xi\) is likely
+non-informative as it is roughly uniformly distributed within {[}0,1{]}.
+The prior distribution of \(\kappa\) allows small values, which are what
+we expected for the variation of the log scale of relative risk. Health
+models are implemented in INLA which uses the Integrated Nested Laplace
+Approximation \autocite{Rue2009}, a computationally effective and
+extremely powerful alternative to implement Bayesian models, that is an
+increasingly popular analysis package in R. For details on how to fit
+spatial and spatio-temporal models with R-INLA, refer to
+\textcite{Blangiardo2013}.
+
+\hypertarget{sec:results}{%
+\section{Results}\label{sec:results}}
+
+\hypertarget{exposure-estimation}{%
+\subsection{Exposure estimation}\label{exposure-estimation}}
+
+Table \ref{tab:polParameter} presents the estimation of pollution model
+parameters while applying model (\ref{eq:model}) to different pollutants
+separately. The main message from the table is that the Akaike
+information criterion \autocite[AIC,][]{Akaike1973} from the proposed
+spatial pollution model (\ref{eq:model}) are all well less than those
+from non-spatial models (an intercept with independent errors, without
+spatial component \(R\) in model (\ref{eq:var})), indicating the
+necessity of the spatial structure in pollution model. The main results
+from pollution model are the population-weighted county level exposure
+for each pollutant, with an example of NO\(_2\) population-weighted
+exposure being shown in Figure \ref{fig:maps4} that the east part of
+Germany has much higher NO\(_2\) exposure levels. A summary of the
+estimated population-weighted county level exposure is presented in
+Table \ref{tab:dataTable}, and an exploratory of the scatterplots of the
+natural logarithm of COVID-19 SIR against the population-weighted
+NO\(_2\) and PM\(_{2.5}\) are displayed in the upper of Figure
+\ref{fig:modelledposterior}, which appears to indicate a linear
+relationship between NO\(_2\) and log COVID-19 SIR.
+
+\begin{table}
+
+\caption{\label{tab:polParameter}Parameter estimation from pollution model (\ref{eq:model}).}
+\centering
+\begin{tabular}[t]{lrrrrrr}
+\toprule
+\textbf{ } & \textbf{$\symbf{\mu}$} & \textbf{$\symbf{\sigma^2}$} & \textbf{$\symbf{\tau^2}$} & \textbf{$\symbf{\eta}$} & \textbf{AIC} & \textbf{Non-spatial AIC}\\
+\midrule
+NO$_2$ & 20.181 & 60.532 & 107.134 & 0.537 & 4501.620 & 4644.213\\
+PM$_{2.5}$ & 10.395 & 1.156 & 1.525 & 0.736 & 741.625 & 771.677\\
+PM$_{10}$ & 17.483 & 4.375 & 10.265 & 0.554 & 2138.916 & 2178.230\\
+SO$_2$ & 1.507 & 0.751 & 0.115 & 0.681 & 301.668 & 365.301\\
+Benzene & 0.846 & 0.022 & 0.093 & 1.584 & 96.896 & 107.443\\
+Aresenic & 0.446 & 0.014 & 0.031 & 1.473 & -71.610 & -54.280\\
+Cadmium & 0.110 & 0.001 & 0.002 & 1.159 & -532.236 & -499.639\\
+Nickel & 1.468 & 0.532 & 1.239 & 0.922 & 603.834 & 631.438\\
+Temperature & 9.810 & 1.527 & 0.245 & 0.857 & 1783.719 & 2175.323\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}
+
+\caption{\label{tab:dataTable}Population-weighted county level exposure summary, with unit $\mu g m^{-3}$ for NO$_2$, PM$_{25}$, PM$_{10}$, SO$_2$, Benzene; $ng m^{-3}$ for Aresenic, admium, Nickel; and $^{\circ}C$  for temperature.}
+\centering
+\begin{tabular}[t]{lrrrrrr}
+\toprule
+ & \textbf{Min} & \textbf{Quantile25} & \textbf{Median} & \textbf{Mean} & \textbf{Quantile75} & \textbf{Max}\\
+\midrule
+NO$_2$ & 12.57 & 18.79 & 21.62 & 23.03 & 26.86 & 36.54\\
+PM$_{2.5}$ & 8.64 & 9.98 & 10.52 & 10.48 & 10.94 & 12.21\\
+PM$_{10}$ & 14.48 & 16.84 & 17.74 & 17.74 & 18.57 & 21.07\\
+SO$_2$ & 0.69 & 1.21 & 1.51 & 1.66 & 1.95 & 4.23\\
+Benzene & 0.69 & 0.81 & 0.85 & 0.88 & 0.96 & 1.15\\
+Aresenic & 0.32 & 0.40 & 0.44 & 0.45 & 0.50 & 0.67\\
+Cadmium & 0.08 & 0.10 & 0.10 & 0.11 & 0.13 & 0.20\\
+Nickel & 0.97 & 1.32 & 1.44 & 1.63 & 1.85 & 3.22\\
+Temperature & 6.69 & 9.61 & 10.15 & 10.09 & 10.54 & 11.84\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\hypertarget{health-model-validation}{%
+\subsection{Health model validation}\label{health-model-validation}}
+
+Before presenting the health effects results from health model
+(\ref{eq:healthmodel}), we assess the necessity of including spatial
+autocorrelation via the random effects model (\ref{eq:model2}) by
+fitting a simplified version of model (\ref{eq:healthmodel}) without
+spatial random effects term \(\phi_k\). The residuals from this model
+show substantial spatial autocorrelation, with significant Moran's I
+statistics (see the middle of Figure \ref{fig:modelledposterior})
+\autocite{Moran1950}. The empirical semi-variogram of the residuals in
+Figure \ref{fig:modelledposterior4} shows that few points are lying
+outside the 95\% Monte Carlo simulation envelopes, suggesting strong
+spatial autocorrelation is remained in the residuals and including the
+spatial random effect term (\ref{eq:model2}) in health model is
+appropriate.
+
+\hypertarget{pollution-health-effects}{%
+\subsection{Pollution health effects}\label{pollution-health-effects}}
+
+In this section, we present the air pollution health effects, which are
+the main results in this study. For comparison purposes, we show both
+the results from our employed health model with the
+\textcite{Leroux1999} CAR model to account for spatially correlated
+residuals (referred to as ``Leroux''), and the results from other
+commonly used CAR models, including the intrinsic autoregressive
+proposed by \textcite{Besag1991} (referred to as ``Besag''), convolution
+model also proposed by \textcite{Besag1991} (referred to as ``BYM''),
+and also the non-spatial model (referred to as ``IID''). In addition, as
+PM\(_{10}\) and PM\(_{2.5}\) are highly correlated (with correlation
+coefficient being 0.75 in our study), we run two separated health model
+to avoid collinearity, with each model including either PM\(_{10}\) or
+PM\(_{2.5}\) and all the other covariates. The results from having
+PM\(_{2.5}\) in the model are presented in this section in Table
+\ref{tab:monitoringModel}, while those from having PM\(_{10}\) are
+presented in the Appendix in Table \ref{tab:monitoringModelpm10}.
+
+The bottom of Figure \ref{fig:modelledposterior} shows both the prior
+and posterior distributions of the spatial dependence parameter \(\xi\)
+and variance parameter \(\kappa\) from fitting the health model
+(\ref{eq:healthmodel}) (having PM\(_{2.5}\)), respectively, suggesting
+that both of them are well estimated from the data. Figure
+\ref{fig:modelledposterior5} shows that the estimate of \(\xi\) is
+around 0.8 which indicates high spatial autocorrelation in the disease
+data after the covariate effects have been accounted for, validating the
+use of the spatial random effects model (\ref{eq:model2}). Similarly,
+Figure \ref{fig:modelledposterior6} shows the estimate of the spatial
+variance parameter \(\kappa\) is around 0.75. The predicted COVID-19 SIR
+presented in Figure \ref{fig:modelledSIR1} from health model
+(\ref{eq:healthmodel}) shows that the majority of the high‐risk counties
+are at the east and south part of Germany, that is where the counties
+likely to have high probabilities of excess risk (see Figure
+\ref{fig:modelledSIR2}).
+
+The main results are presented in Table \ref{tab:monitoringModel},
+including the posterior medians and 95\% credible intervals of relative
+risk from one-unit increase for each covariate, and the widely
+applicable information criterion (WAIC) \autocite{Watanabe2010} from
+fitting various health models, including the employed Leroux model, and
+commonly used BYM, Besag, IID models. Table \ref{tab:monitoringModel}
+shows that the WAIC from different CAR models are similar, while it is
+slightly lower (better) from the currently used Leroux model. The
+results from Leroux model show that NO\(_2\) is significantly (at 0.05
+level) associated with the COVID-19 SIR, with 1 \(\mu gm^{-3}\) increase
+of long-term exposure to NO\(_2\), the COVID-19 incidence rate is likely
+to increase 5.58\% (95\% CI: 3.35\%, 7.86\%). This statistically
+significant association between NO\(_2\) and COVID-19 SIR is consistent
+across various health models, including the BYM, Besag, IID models (and
+also those from Table \ref{tab:monitoringModelpm10} where health model
+has PM\(_{10}\) rather than PM\(_{2.5}\)), which enhances the
+plausibility of the results.
+
+The areal population density dose not have a significant association
+with COVID-19 SIR, while temperature displays a negative association (at
+0.05 level) with COVID-19 incidence rate. As shown in Figure
+\ref{fig:maps3}, the COVID-19 SIRs are generally higher in the south
+where actually has a lower long-term temperature surface compared to the
+north \autocite[see][]{mapsofworld2020}. This explains the negative
+association between temperature and COVID-19 incidence rate. No
+substantial associations (at 0.05 level) were found between COVID-19
+incidence rate and the other pollutants, including PM\(_{2.5}\),
+SO\(_2\), Benzene, Aresenic, Cadmium and Nickel. Note that SO\(_2\) is
+just at the border of having a significant association with COVID-19
+SIR, since the posterior probabilities of its increasing relative risk
+is 0.96 (see Table \ref{tab:monitoringModel}). And SO\(_2\) is
+significantly associated with COVID-19 SIR from the model having
+PM\(_{10}\) rather than PM\(_{2.5}\) (see the Leroux model results from
+Table \ref{tab:monitoringModelpm10}).
+
+\newgeometry{left=3.5cm}
+
+\begin{landscape}\begin{table}
+
+\caption{\label{tab:monitoringModel}Posterior medians and 95\% CI for the relative risk (\%) from one-unit increase in each covariate, and the WAIC from fitting various health models (having PM$_{2.5}$), including the employed Leroux model, and commonly used BYM, Besag, IID models. Pr is the posterior probabilities that covariate increases relative risk.}
+\centering
+\fontsize{9}{11}\selectfont
+\begin{tabular}[t]{lrlcrlcrlcrlc}
+\toprule
+\multicolumn{1}{c}{\textbf{ }} & \multicolumn{3}{c}{\textbf{Leroux}} & \multicolumn{3}{c}{\textbf{BYM}} & \multicolumn{3}{c}{\textbf{Besag}} & \multicolumn{3}{c}{\textbf{IID}} \\
+\cmidrule(l{3pt}r{3pt}){2-4} \cmidrule(l{3pt}r{3pt}){5-7} \cmidrule(l{3pt}r{3pt}){8-10} \cmidrule(l{3pt}r{3pt}){11-13}
+\multicolumn{1}{c}{ } & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} \\
+\cmidrule(l{3pt}r{3pt}){2-2} \cmidrule(l{3pt}r{3pt}){3-3} \cmidrule(l{3pt}r{3pt}){4-4} \cmidrule(l{3pt}r{3pt}){5-5} \cmidrule(l{3pt}r{3pt}){6-6} \cmidrule(l{3pt}r{3pt}){7-7} \cmidrule(l{3pt}r{3pt}){8-8} \cmidrule(l{3pt}r{3pt}){9-9} \cmidrule(l{3pt}r{3pt}){10-10} \cmidrule(l{3pt}r{3pt}){11-11} \cmidrule(l{3pt}r{3pt}){12-12} \cmidrule(l{3pt}r{3pt}){13-13}
+NO$_2$ & 5.58 & (  3.35,   7.86) & [1.00] & 5.21 & (  2.98,   7.50) & [1.00] & 5.36 & (  3.06,   7.71) & [1.00] & 5.60 & (  3.94,   7.29) & [1.00]\\
+PM$_{2.5}$ & 4.59 & (-12.57,  24.79) & [0.69] & 1.62 & (-15.76,  22.51) & [0.57] & 0.45 & (-17.49,  22.27) & [0.52] & 8.04 & ( -2.70,  19.94) & [0.93]\\
+SO$_2$ & 15.83 & ( -1.42,  35.45) & [0.96] & 6.29 & ( -9.20,  24.36) & [0.78] & 5.45 & (-10.56,  24.31) & [0.74] & 39.51 & ( 26.44,  53.94) & [1.00]\\
+Temperature & -11.72 & (-20.84,  -1.46) & [0.01] & -8.52 & (-18.01,   2.05) & [0.05] & -8.48 & (-18.23,   2.41) & [0.06] & -18.12 & (-24.55, -11.16) & [0.00]\\
+Benzene & -1.21 & (-19.21,  20.12) & [0.45] & -2.75 & (-23.00,  22.75) & [0.41] & -3.45 & (-24.59,  23.58) & [0.39] & 9.32 & ( -1.58,  21.41) & [0.95]\\
+Aresenic & -16.72 & (-31.45,   1.67) & [0.04] & -9.34 & (-26.32,  11.47) & [0.17] & -10.27 & (-27.89,  11.64) & [0.16] & -22.38 & (-30.83, -12.92) & [0.00]\\
+Cadmium & 16.44 & ( -5.67,  44.53) & [0.92] & 23.93 & ( -1.12,  55.49) & [0.97] & 27.08 & (  0.21,  61.15) & [0.98] & 6.86 & ( -5.49,  20.80) & [0.86]\\
+Nickel & -1.35 & (-13.13,  12.03) & [0.42] & -1.41 & (-13.44,  12.26) & [0.41] & -1.56 & (-14.22,  12.95) & [0.41] & -1.47 & ( -8.90,   6.57) & [0.35]\\
+popDensity & -2.12 & ( -7.34,   3.39) & [0.22] & -2.23 & ( -7.37,   3.19) & [0.20] & -1.83 & ( -6.98,   3.61) & [0.25] & -6.15 & (-11.35,  -0.65) & [0.01]\\
+WAIC &  & 3814.64 &  &  & 3814.8 &  &  & 3816.18 &  &  & 3815.05 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{landscape}
+\restoregeometry
+
+\hypertarget{sec:conclusion}{%
+\section{Discussion}\label{sec:conclusion}}
+
+``Poisoning our environment means poisoning our own body, and when it
+experiences chronic respiratory stress its ability to defend itself from
+infections is limited'' \autocite{Ogen2020}. Given that the existing
+research has linked pollutants (e.g., PM\(_{2.5}\) and NO\(_2\))
+exposure to health damage, particularly respiratory and lung diseases,
+which could make people more vulnerable to contracting COVID-19. This
+study uses a spatial ecological design to estimate the impacts of air
+pollution on COVID-19 infection in Germany by comparing geographical
+contrasts in air pollution and infection risk across \(K\) contiguous
+small areas, where we use population-weighted method to better estimate
+the real areal pollution concentrations. The results show that long-term
+exposure to NO\(_2\) is significantly associated with COVID-19 incidence
+rate in Germany, with 1 \(\mu gm^{-3}\) increase of long-term exposure
+to NO\(_2\), the COVID-19 incidence rate is likely to increase 5.58\%
+(95\% CI: 3.35\%, 7.86\%). No substantial associations were found
+between COVID-19 incidence rate and the other pollutants, including
+PM\(_{2.5}\), PM\(_{10}\), SO\(_2\), Benzene, Aresenic, Cadmium and
+Nickel. Temperature and population density are adjusted in the model,
+and a set of random effects are also included to capture the residual
+spatial autocorrelation after the covariate effects have been accounted
+for.
+
+For comparison purposes, we also run the health models with other
+commonly used CAR models, including the intrinsic autoregressive
+proposed by \textcite{Besag1991}, convolution model also proposed by
+\textcite{Besag1991}, and also the non-spatial IID model. In addition,
+as PM\(_{2.5}\) and PM\(_{10}\) are highly correlated, we run two
+separated health models to avoid collinearity, with each model including
+either PM\(_{2.5}\) or PM\(_{10}\) and all the other covariates. We
+found that the statistically significant associations between NO\(_2\)
+and COVID-19 SIR are consistent across these various health models,
+which enhances the plausibility of the results.
+
+Several limitations to this pilot study need to be acknowledged. First,
+due to data availability, no socioeconomic or health care related
+covariates were included in the health model which, if included, would
+provide the possibility of sensitivity analyses and help testing the
+robustness of the findings. However, in our health model, we do include
+a spatial random effects term to allow for any spatial autocorrelation
+residuals after accounting for the known covariates, and the main
+findings of NO\(_2\) are actually adjusted for a set of other pollutants
+and temperature. Another limitation is lacking COVID-19 testing numbers,
+since the confirmed cases (positive testing numbers) in a county mainly
+rely on the total testing numbers being conducted in that county,
+without which the infection rates in some counties could be higher or
+lower estimated compared to others'. Therefore, we put an effort to
+better estimate the expected number of cases in each county by utilizing
+national sex-age standardized infection rate. The limitation in regard
+to pollution model is that the current one is a univariate model, which
+is potentially losing some power by not borrowing strength over
+correlated pollutants compared to a multivariate pollution model.
+
+Finally, besides COVID-19 infection rate, its death rate and
+multi-country studies should also be focused when (or if) more deaths
+occur in the future. Such studies will help us better understanding
+COVID-19, and also help the global community and health organizations
+stay informed and make data driven decisions.
+
+\begin{figure}[H]
+\subfloat[NO$_2$\label{fig:modelledposterior1}]{\includegraphics[width=0.5\textwidth]{figure/modelledposterior-1} }\subfloat[PM$_{2.5}$\label{fig:modelledposterior2}]{\includegraphics[width=0.5\textwidth]{figure/modelledposterior-2} }\subfloat[Moran's I test, p-value<0.0001\label{fig:modelledposterior3}]{\includegraphics[width=0.5\textwidth]{figure/modelledposterior-3} }\subfloat[Empirical semi-variogram\label{fig:modelledposterior4}]{\includegraphics[width=0.5\textwidth]{figure/modelledposterior-4} }\subfloat[$\xi$\label{fig:modelledposterior5}]{\includegraphics[width=0.5\textwidth]{figure/modelledposterior-5} }\subfloat[$\kappa$\label{fig:modelledposterior6}]{\includegraphics[width=0.5\textwidth]{figure/modelledposterior-6} }\caption{Upper: scatterplots of log COVID-19 SIR against NO$_2$ ($\mu gm^{-3}$) and PM$_{2.5}$ ($\mu gm^{-3}$); Middle: the Moran's I test and the empirical semi-variogram of the residuals from the non-spatial health model (circles), with 95\% Monte Carlo simulation envelopes (dashed lines); Bottom: posterior (solid line) and prior (dashed line) plots for $\xi$ and $\kappa$ from health model (\ref{eq:healthmodel}).}\label{fig:modelledposterior}
+\end{figure}
+
+\begin{figure}[H]
+\subfloat[Predicted risk \label{fig:modelledSIR1}]{\includegraphics[width=0.5\textwidth]{figure/modelledSIR-1} }\subfloat[Exceedance probabilities\label{fig:modelledSIR2}]{\includegraphics[width=0.5\textwidth]{figure/modelledSIR-2} }\caption[Posterior means of relative risk E$(\lambda_k|Y)$ and probabilities of excess risk Pr$(\exp(\phi_i)> 1.5 \mid Y)$]{Posterior means of relative risk E$(\lambda_k|Y)$ and probabilities of excess risk Pr$(\exp(\phi_i)> 1.5 \mid Y)$.}\label{fig:modelledSIR}
+\end{figure}
+
+\hypertarget{appendix}{%
+\section*{Appendix}\label{appendix}}
+\addcontentsline{toc}{section}{Appendix}
+
+The results from fitting health models having PM\(_{10}\) are shown in
+Table \ref{tab:monitoringModelpm10}. The raw data and R code used in
+this study will be shared on Github shortly.
+
+\newgeometry{left=3.5cm}
+
+\begin{landscape}\begin{table}
+
+\caption{\label{tab:monitoringModelpm10}Posterior medians and 95\% CI for the relative risk (\%) from one-unit increase in each covariate, and the WAIC from fitting various health models (having PM$_{2.5}$), including the employed Leroux model, and commonly used BYM, Besag, IID models. Pr is the posterior probabilities that covariate increases relative risk.}
+\centering
+\fontsize{9}{11}\selectfont
+\begin{tabular}[t]{lrlcrlcrlcrlc}
+\toprule
+\multicolumn{1}{c}{\textbf{ }} & \multicolumn{3}{c}{\textbf{Leroux}} & \multicolumn{3}{c}{\textbf{BYM}} & \multicolumn{3}{c}{\textbf{Besag}} & \multicolumn{3}{c}{\textbf{IID}} \\
+\cmidrule(l{3pt}r{3pt}){2-4} \cmidrule(l{3pt}r{3pt}){5-7} \cmidrule(l{3pt}r{3pt}){8-10} \cmidrule(l{3pt}r{3pt}){11-13}
+\multicolumn{1}{c}{ } & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} & \multicolumn{1}{c}{Est} & \multicolumn{1}{c}{CI} & \multicolumn{1}{c}{Pr} \\
+\cmidrule(l{3pt}r{3pt}){2-2} \cmidrule(l{3pt}r{3pt}){3-3} \cmidrule(l{3pt}r{3pt}){4-4} \cmidrule(l{3pt}r{3pt}){5-5} \cmidrule(l{3pt}r{3pt}){6-6} \cmidrule(l{3pt}r{3pt}){7-7} \cmidrule(l{3pt}r{3pt}){8-8} \cmidrule(l{3pt}r{3pt}){9-9} \cmidrule(l{3pt}r{3pt}){10-10} \cmidrule(l{3pt}r{3pt}){11-11} \cmidrule(l{3pt}r{3pt}){12-12} \cmidrule(l{3pt}r{3pt}){13-13}
+NO$_2$ & 6.06 & (  3.50,   8.67) & [1.00] & 5.51 & (  2.91,   8.20) & [1.00] & 5.57 & (  2.94,   8.26) & [1.00] & 6.93 & (  5.02,   8.88) & [1.00]\\
+PM$_{10}$ & -2.98 & (-12.49,   7.63) & [0.28] & -1.43 & (-11.56,   9.81) & [0.40] & -1.61 & (-11.78,   9.72) & [0.38] & -7.88 & (-14.13,  -1.17) & [0.01]\\
+SO$_2$ & 18.82 & (  0.90,  39.05) & [0.98] & 6.40 & ( -9.64,  25.21) & [0.77] & 6.18 & ( -9.94,  25.18) & [0.76] & 50.66 & ( 37.18,  65.45) & [1.00]\\
+Temperature & -10.89 & (-20.34,  -0.24) & [0.02] & -8.09 & (-18.09,   3.13) & [0.07] & -8.05 & (-18.12,   3.24) & [0.08] & -16.21 & (-22.97,  -8.87) & [0.00]\\
+Benzene & -0.80 & (-18.69,  20.39) & [0.47] & -3.00 & (-23.67,  23.12) & [0.40] & -3.27 & (-24.07,  23.22) & [0.39] & 8.46 & ( -2.34,  20.43) & [0.94]\\
+Aresenic & -13.74 & (-29.20,   5.35) & [0.07] & -9.18 & (-26.99,  12.85) & [0.19] & -9.42 & (-27.34,  12.88) & [0.19] & -12.82 & (-22.89,  -1.44) & [0.01]\\
+Cadmium & 13.52 & ( -8.03,  41.21) & [0.88] & 25.46 & ( -0.87,  59.05) & [0.97] & 26.31 & ( -0.47,  60.27) & [0.97] & -1.37 & (-12.55,  11.21) & [0.41]\\
+Nickel & -0.70 & (-12.51,  12.67) & [0.46] & -1.32 & (-13.82,  12.95) & [0.42] & -1.37 & (-14.00,  13.11) & [0.42] & -1.17 & ( -8.59,   6.85) & [0.38]\\
+popDensity & -2.08 & ( -7.30,   3.43) & [0.22] & -1.92 & ( -7.09,   3.52) & [0.24] & -1.82 & ( -6.98,   3.61) & [0.25] & -5.89 & (-11.08,  -0.41) & [0.02]\\
+WAIC &  & 3814.55 &  &  & 3815.65 &  &  & 3816.13 &  &  & 3814.58 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{landscape}
+\restoregeometry
+
+\printbibliography[title=References]
+
+\end{document}
